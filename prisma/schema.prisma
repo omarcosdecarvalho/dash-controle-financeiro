@@ -1,0 +1,139 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Pessoa {
+  id        String   @id @default(cuid())
+  nome      String
+  email     String?
+  telefone  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lancamentos  Lancamento[]
+  pagamentos   Pagamento[]
+  emprestimos  Emprestimo[]
+}
+
+model FonteDivida {
+  id        String   @id @default(cuid())
+  nome      String
+  tipo      String   @default("outros")
+  chavePix  String?
+  tipoPix   String?
+  nomePix   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  lancamentos  Lancamento[]
+  emprestimos  Emprestimo[]
+}
+
+model Lancamento {
+  id        String   @id @default(cuid())
+  descricao String
+  valor     Float
+  tipo      String
+
+  dataVencimento DateTime
+
+  totalParcelas Int?
+  parcelaAtual  Int?
+  diaVencimento Int?
+
+  pessoaId String?
+  pessoa   Pessoa?      @relation(fields: [pessoaId], references: [id])
+
+  fonteId String?
+  fonte   FonteDivida? @relation(fields: [fonteId], references: [id])
+
+  observacao String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  parcelas   Parcela[]
+  pagamentos Pagamento[]
+}
+
+model Parcela {
+  id             String     @id @default(cuid())
+  lancamentoId   String
+  lancamento     Lancamento @relation(fields: [lancamentoId], references: [id], onDelete: Cascade)
+  numero         Int
+  valor          Float
+  dataVencimento DateTime
+  pago           Boolean    @default(false)
+  createdAt      DateTime   @default(now())
+
+  pagamentos Pagamento[]
+}
+
+model Pagamento {
+  id            String   @id @default(cuid())
+  valor         Float
+  dataPagamento DateTime
+  observacao    String?
+  createdAt     DateTime @default(now())
+
+  lancamentoId String?
+  lancamento   Lancamento? @relation(fields: [lancamentoId], references: [id])
+
+  parcelaId String?
+  parcela   Parcela?    @relation(fields: [parcelaId], references: [id])
+
+  pessoaId String?
+  pessoa   Pessoa?     @relation(fields: [pessoaId], references: [id])
+}
+
+model Emprestimo {
+  id                 String      @id @default(cuid())
+  descricao          String
+  credor             String?
+  valorTotal         Float
+  valorParcela       Float
+  quantidadeParcelas Int
+  parcelaAtual       Int         @default(1)
+  dataInicio         DateTime
+  arquivo            String?
+  observacao         String?
+
+  fonteId  String?
+  fonte    FonteDivida? @relation(fields: [fonteId], references: [id])
+
+  pessoaId String?
+  pessoa   Pessoa?      @relation(fields: [pessoaId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Fatura {
+  id        String   @id @default(cuid())
+  nome      String
+  arquivo   String
+  mes       Int
+  ano       Int
+  status    String   @default("pendente")
+  createdAt DateTime @default(now())
+
+  itens ItemFatura[]
+}
+
+model ItemFatura {
+  id           String    @id @default(cuid())
+  faturaId     String
+  fatura       Fatura    @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+  descricao    String
+  valor        Float
+  data         DateTime?
+  categoria    String?
+  importado    Boolean   @default(false)
+  lancamentoId String?
+  createdAt    DateTime  @default(now())
+}

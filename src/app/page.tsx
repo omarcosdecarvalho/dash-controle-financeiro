@@ -49,7 +49,7 @@ function PagamentoTotalMes({ mes, ano }: { mes: number; ano: number }) {
             {aberto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-3 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
           <div className="bg-white rounded-lg p-3 border text-center">
             <p className="text-xs text-gray-400 flex items-center justify-center gap-1"><CreditCard className="h-3 w-3" /> Cartões</p>
             <p className="text-lg font-bold text-gray-800">{formatCurrency(resumo.totalCartoes)}</p>
@@ -135,7 +135,7 @@ export default function DashboardPage() {
 
   return (
     <div className="max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <LayoutDashboard className="h-6 w-6 text-blue-600" />
           <h1 className="text-2xl font-bold">Dashboard</h1>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Cards de resumo */}
-      <div className="grid grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-500 font-normal flex items-center gap-2">

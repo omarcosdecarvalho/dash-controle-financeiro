@@ -15,7 +15,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="pt-BR" className={geist.variable}>
       <body className="bg-gray-50 text-gray-900 antialiased">
         <Sidebar />
-        <main className="ml-56 min-h-screen p-8">{children}</main>
+        <main className="md:ml-56 min-h-screen p-4 md:p-8 pt-16 md:pt-8">{children}</main>
       </body>
     </html>
   );

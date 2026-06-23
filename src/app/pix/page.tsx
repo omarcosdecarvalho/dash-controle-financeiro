@@ -87,7 +87,7 @@ export default function PixPage() {
   return (
     <div className="max-w-4xl mx-auto">
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div className="flex items-center gap-3">
           <QrCode className="h-6 w-6 text-blue-600" />
           <div>

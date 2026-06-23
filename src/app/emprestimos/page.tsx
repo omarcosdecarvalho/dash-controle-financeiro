@@ -43,7 +43,7 @@ const emptyForm = {
 
 // ─── Barra de progresso de parcelas ─────────────────────────────────────────
 function BarraParcelas({ atual, total }: { atual: number; total: number }) {
-  const pct = Math.min((atual - 1) / total * 100, 100);
+  const pct = total <= 0 ? 0 : Math.min((atual - 1) / total * 100, 100);
   const restantes = total - atual + 1;
   return (
     <div className="mt-3">
@@ -84,7 +84,7 @@ function PagamentoTotalMes({ mes, ano }: { mes: number; ano: number }) {
             {aberto ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
           </button>
         </div>
-        <div className="grid grid-cols-3 gap-3 mt-2">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-2">
           <div className="bg-white rounded-lg p-3 border text-center">
             <p className="text-xs text-gray-400 flex items-center justify-center gap-1"><CreditCard className="h-3 w-3" /> Cartões/Lançamentos</p>
             <p className="text-lg font-bold text-gray-800">{formatCurrency(resumo.totalCartoes)}</p>
@@ -268,7 +268,7 @@ export default function EmprestimosPage() {
   return (
     <div className="max-w-4xl mx-auto space-y-8">
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <Landmark className="h-6 w-6 text-blue-600" />
           <div>
@@ -383,7 +383,7 @@ export default function EmprestimosPage() {
 
       {/* ── Dialog: Novo/Editar empréstimo ── */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[92vh] overflow-y-auto">
+        <DialogContent className="w-[calc(100vw-2rem)] max-w-lg max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Editar Empréstimo" : "Novo Empréstimo"}</DialogTitle>
           </DialogHeader>

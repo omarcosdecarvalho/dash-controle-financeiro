@@ -193,11 +193,11 @@ export async function analisarFatura(
 
   // PDF — extrai texto e envia para IA (ou usa regex)
   if (mimeType === "application/pdf" || filename.endsWith(".pdf")) {
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const pdfParse = require("pdf-parse");
     let texto = "";
     try {
-      const data = await pdfParse(buffer);
+      // Importação dinâmica evita erro de inicialização do pdf-parse no Vercel
+      const pdfParse = (await import("pdf-parse")).default;
+      const data = await pdfParse(buffer, { max: 0 });
       texto = data.text ?? "";
     } catch {
       texto = "";

@@ -141,7 +141,6 @@ export default function FaturasPage() {
     setForm({ nome: "", mes: String(new Date().getMonth() + 1), ano: String(new Date().getFullYear()) });
     if (fileRef.current) fileRef.current.value = "";
     await load();
-    if (nova.analisando) setAnalisando(nova.id);
   }
 
   return (

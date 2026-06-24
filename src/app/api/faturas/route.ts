@@ -3,6 +3,9 @@ import { prisma } from "@/lib/prisma";
 import { uploadArquivo } from "@/lib/supabase-storage";
 import { analisarFatura } from "@/lib/analisador";
 
+// Aumenta o timeout da função para 60s (máximo no plano gratuito Vercel)
+export const maxDuration = 60;
+
 export async function GET() {
   const faturas = await prisma.fatura.findMany({
     include: { itens: true },
@@ -30,27 +33,16 @@ export async function POST(req: NextRequest) {
     data: { nome, mes, ano, arquivo: arquivoUrl, status: "pendente" },
   });
 
-  // Análise em background
-  analisarFaturaBackground(fatura.id, buffer, file.name, file.type || "application/octet-stream");
-
-  return NextResponse.json({ ...fatura, analisando: true }, { status: 201 });
-}
-
-async function analisarFaturaBackground(
-  faturaId: string,
-  buffer: Buffer,
-  filename: string,
-  mimeType: string
-) {
+  // Análise síncrona — aguarda antes de responder para não ser cortada pelo Vercel
   try {
-    await prisma.fatura.update({ where: { id: faturaId }, data: { status: "em_revisao" } });
+    await prisma.fatura.update({ where: { id: fatura.id }, data: { status: "em_revisao" } });
 
-    const itens = await analisarFatura(buffer, filename, mimeType);
+    const itens = await analisarFatura(buffer, file.name, file.type || "application/octet-stream");
 
     if (itens.length > 0) {
       await prisma.itemFatura.createMany({
         data: itens.map((item) => ({
-          faturaId,
+          faturaId:   fatura.id,
           descricao:  item.descricao,
           valor:      item.valor,
           data:       item.data ? new Date(item.data) : null,
@@ -60,9 +52,16 @@ async function analisarFaturaBackground(
       });
     }
 
-    await prisma.fatura.update({ where: { id: faturaId }, data: { status: "em_revisao" } });
+    const faturaAtualizada = await prisma.fatura.update({
+      where: { id: fatura.id },
+      data: { status: "em_revisao" },
+      include: { itens: true },
+    });
+
+    return NextResponse.json({ ...faturaAtualizada, analisando: false }, { status: 201 });
   } catch (err) {
     console.error("Erro ao analisar fatura:", err);
-    await prisma.fatura.update({ where: { id: faturaId }, data: { status: "pendente" } }).catch(() => {});
+    await prisma.fatura.update({ where: { id: fatura.id }, data: { status: "pendente" } }).catch(() => {});
+    return NextResponse.json({ ...fatura, analisando: false }, { status: 201 });
   }
 }

@@ -7,6 +7,7 @@ import {
   ChevronLeft, ChevronRight, QrCode, Copy, Check,
   AlertCircle, CreditCard,
 } from "lucide-react";
+import { BancoLogo } from "@/components/ui/banco-logo";
 import { formatCurrency, formatMonth, TIPOS_LANCAMENTO } from "@/lib/utils";
 
 interface ItemPix {
@@ -130,7 +131,8 @@ export default function PixPage() {
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
+                      <div className="flex items-center gap-3 flex-wrap">
+                        <BancoLogo nome={fonte.nome} />
                         <CardTitle className="text-base">{fonte.nome}</CardTitle>
                         {fonte.saldoPendente > 0
                           ? <Badge variant="warning">Pendente</Badge>

@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Pencil, Trash2, CreditCard, QrCode } from "lucide-react";
+import { BancoLogo } from "@/components/ui/banco-logo";
 import { TIPOS_FONTE } from "@/lib/utils";
 
 interface FonteDivida {
@@ -179,7 +180,8 @@ export default function FontesPage() {
             <Card key={f.id}>
               <CardContent className="py-4 flex items-start justify-between">
                 <div className="flex-1">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <BancoLogo nome={f.nome} size="sm" />
                     <p className="font-semibold">{f.nome}</p>
                     <Badge variant={tipoVariant(f.tipo)}>{tipoLabel(f.tipo)}</Badge>
                   </div>

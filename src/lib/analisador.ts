@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { categorizarPorKeyword, CategoriaValue } from "./categorias";
+import * as XLSX from "xlsx";
 
 export interface ItemAnalisado {
   descricao: string;
@@ -165,6 +166,53 @@ Regras:
     }));
 }
 
+// ─── Parser Excel (xlsx/xls) ───────────────────────────────────────────────
+
+function parsearExcel(buffer: Buffer): ItemAnalisado[] {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  const rows: Record<string, unknown>[] = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+  if (rows.length === 0) return [];
+
+  // Detecta colunas por nome (case-insensitive)
+  const keys = Object.keys(rows[0]);
+  const keyDesc  = keys.find(k => /descri|lanc|histor|titulo|memo|detail|estabelec/i.test(k));
+  const keyValor = keys.find(k => /valor|value|amount|quantia|debito/i.test(k));
+  const keyData  = keys.find(k => /data|date|dt\b/i.test(k));
+
+  if (!keyDesc || !keyValor) return [];
+
+  const itens: ItemAnalisado[] = [];
+
+  for (const row of rows) {
+    const descricao = String(row[keyDesc] ?? "").trim();
+    const valorRaw  = String(row[keyValor] ?? "0");
+    const dataRaw   = keyData ? row[keyData] : undefined;
+
+    const valor = parseFloat(
+      valorRaw.replace(/\./g, "").replace(",", ".").replace(/[^\d.-]/g, "")
+    );
+
+    if (!descricao || isNaN(valor) || valor <= 0) continue;
+
+    let data: string | undefined;
+    if (dataRaw instanceof Date) {
+      data = dataRaw.toISOString().split("T")[0];
+    } else if (typeof dataRaw === "string" && dataRaw) {
+      const partes = dataRaw.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{2,4})/);
+      if (partes) {
+        const ano = partes[3].length === 2 ? `20${partes[3]}` : partes[3];
+        data = `${ano}-${partes[2]}-${partes[1]}`;
+      }
+    }
+
+    itens.push({ descricao, valor, data, categoria: categorizarPorKeyword(descricao) });
+  }
+
+  return itens;
+}
+
 // ─── Entrada principal ─────────────────────────────────────────────────────
 
 export async function analisarFatura(
@@ -174,6 +222,25 @@ export async function analisarFatura(
 ): Promise<ItemAnalisado[]> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
   const temIA = !!(apiKey && apiKey.trim());
+
+  // Excel (xlsx/xls) — parseia localmente
+  const isExcel = filename.endsWith(".xlsx") || filename.endsWith(".xls") ||
+    mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    mimeType === "application/vnd.ms-excel";
+
+  if (isExcel) {
+    const itens = parsearExcel(buffer);
+    if (temIA && itens.length > 0) {
+      try {
+        const texto = itens.map(i => `${i.descricao}\t${i.valor}`).join("\n");
+        const client = new Anthropic({ apiKey });
+        return await analisarComClaude(client, { tipo: "texto", texto });
+      } catch {
+        // fallback para parse local
+      }
+    }
+    return itens;
+  }
 
   // CSV — sempre parseia localmente, IA melhora categorias
   if (mimeType === "text/csv" || filename.endsWith(".csv")) {

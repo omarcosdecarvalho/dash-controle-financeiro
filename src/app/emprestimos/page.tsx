@@ -399,7 +399,7 @@ export default function EmprestimosPage() {
                   <input
                     ref={fileRef}
                     type="file"
-                    accept=".pdf,.png,.jpg,.jpeg,.webp,.csv"
+                    accept=".pdf,.csv,.xlsx,.xls,.png,.jpg,.jpeg,.webp"
                     className="flex-1 text-xs text-gray-500 file:mr-3 file:py-1 file:px-2 file:rounded file:border-0 file:text-xs file:bg-white file:text-blue-700 hover:file:bg-blue-50"
                   />
                   <Button size="sm" variant="outline" onClick={analisarArquivo} disabled={analisando}>

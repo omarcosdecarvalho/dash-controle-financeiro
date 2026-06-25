@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { uploadArquivo } from "@/lib/supabase-storage";
 import { analisarDocumentoEmprestimo } from "@/lib/analisador-emprestimo";
 
+export const maxDuration = 60;
+
 export async function GET() {
   const emprestimos = await prisma.emprestimo.findMany({
     include: { fonte: true, pessoa: true },

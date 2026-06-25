@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import * as XLSX from "xlsx";
 
 export interface DadosEmprestimo {
   descricao: string;
@@ -68,6 +69,17 @@ async function extrairComClaude(
   return JSON.parse(jsonMatch[0]);
 }
 
+function excelParaTexto(buffer: Buffer): string {
+  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
+  const linhas: string[] = [];
+  for (const sheetName of workbook.SheetNames) {
+    const sheet = workbook.Sheets[sheetName];
+    const csv = XLSX.utils.sheet_to_csv(sheet);
+    linhas.push(csv);
+  }
+  return linhas.join("\n");
+}
+
 export async function analisarDocumentoEmprestimo(
   buffer: Buffer,
   filename: string,
@@ -78,17 +90,33 @@ export async function analisarDocumentoEmprestimo(
 
   const client = new Anthropic({ apiKey });
 
+  const isExcel = filename.endsWith(".xlsx") || filename.endsWith(".xls") ||
+    mimeType === "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" ||
+    mimeType === "application/vnd.ms-excel";
+
   try {
-    // PDF — extrai texto
+    // Excel
+    if (isExcel) {
+      const texto = excelParaTexto(buffer);
+      return await extrairComClaude(client, { tipo: "texto", texto });
+    }
+
+    // PDF — importação dinâmica para evitar erro no Vercel
     if (mimeType === "application/pdf" || filename.endsWith(".pdf")) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const pdfParse = require("pdf-parse");
-      const data = await pdfParse(buffer);
-      const texto = data.text ?? "";
+      let texto = "";
+      try {
+        const pdfParse = (await import("pdf-parse")).default;
+        const data = await pdfParse(buffer, { max: 0 });
+        texto = data.text ?? "";
+      } catch {
+        texto = "";
+      }
+
       if (texto.length > 20) {
         return await extrairComClaude(client, { tipo: "texto", texto });
       }
-      // PDF com texto vazio — tenta como imagem via base64 (fallback)
+
+      // PDF sem texto extraível (escaneado) — envia como imagem
       return await extrairComClaude(client, {
         tipo: "imagem",
         base64: buffer.toString("base64"),
@@ -105,7 +133,7 @@ export async function analisarDocumentoEmprestimo(
       });
     }
 
-    // CSV / texto
+    // CSV / texto genérico
     return await extrairComClaude(client, {
       tipo: "texto",
       texto: buffer.toString("utf-8"),
